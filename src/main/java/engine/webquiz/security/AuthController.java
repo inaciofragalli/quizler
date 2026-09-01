@@ -2,14 +2,19 @@ package engine.webquiz.security;
 
 import engine.webquiz.user.UserData;
 import engine.webquiz.user.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,7 +25,7 @@ public class AuthController {
     private final AuthenticationManager authManager;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest req) {
+    public ResponseEntity<Void> login(@Valid @RequestBody AuthRequest req, HttpServletResponse res) {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(req.email(), req.password()));
 
         UserData userData = userService.loadUserByUsername(req.email());

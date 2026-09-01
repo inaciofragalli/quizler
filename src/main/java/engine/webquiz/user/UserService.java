@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final PasswordEncoder encoder;
     private final UserRepository repo;

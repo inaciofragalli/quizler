@@ -20,7 +20,7 @@ public class JwtService {
     private final long expirationTime;
 
     public JwtService(@Value("${JWT_SECRET}") String secret,
-                      @Value("${JWT_EXPIRATION:86400000}") long expirationTime) {
+                      @Value("${JWT_EXPIRATION}") long expirationTime) {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("JWT_SECRET must be set");
         }

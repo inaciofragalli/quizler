@@ -1,6 +1,5 @@
 package engine.webquiz.user;
 
-import engine.webquiz.security.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

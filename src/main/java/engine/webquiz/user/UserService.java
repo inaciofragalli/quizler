@@ -1,8 +1,10 @@
-package engine.webquiz.security;
+package engine.webquiz.user;
 
-import engine.webquiz.user.User;
-import engine.webquiz.user.UserRepository;
-import engine.webquiz.user.UserRequest;
+import engine.webquiz.security.AuthRequest;
+import engine.webquiz.security.AuthResponse;
+import engine.webquiz.security.JwtService;
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,17 +13,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final PasswordEncoder encoder;
     private final UserRepository repo;
 
-    public UserService(UserRepository repo, PasswordEncoder encoder) {
-        this.encoder = encoder;
-        this.repo = repo;
-    }
-
     @Override
-    public UserData loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserData loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         User user = repo.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Not found: " + email));
 

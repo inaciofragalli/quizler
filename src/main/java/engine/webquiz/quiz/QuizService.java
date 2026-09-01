@@ -2,7 +2,7 @@ package engine.webquiz.quiz;
 
 import engine.webquiz.history.QuizCompletion;
 import engine.webquiz.history.QuizCompletionRepository;
-import engine.webquiz.security.UserData;
+import engine.webquiz.user.UserData;
 import engine.webquiz.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,7 +11,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service

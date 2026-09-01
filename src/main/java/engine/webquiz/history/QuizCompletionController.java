@@ -1,6 +1,6 @@
 package engine.webquiz.history;
 
-import engine.security.UserData;
+import engine.webquiz.security.UserData;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

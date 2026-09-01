@@ -1,6 +1,6 @@
 package engine.webquiz.security;
 
-import engine.user.User;
+import engine.webquiz.user.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

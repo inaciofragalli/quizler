@@ -1,6 +1,6 @@
 package engine.webquiz.quiz;
 
-import engine.user.User;
+import engine.webquiz.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

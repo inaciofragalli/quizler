@@ -1,10 +1,9 @@
 package engine.webquiz.quiz;
 
-import engine.history.QuizCompletion;
-import engine.history.QuizCompletionRepository;
-import engine.history.QuizCompletionResponse;
-import engine.security.UserData;
-import engine.user.User;
+import engine.webquiz.history.QuizCompletion;
+import engine.webquiz.history.QuizCompletionRepository;
+import engine.webquiz.security.UserData;
+import engine.webquiz.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package engine.history;
+package engine.webquiz.history;
 
 import java.time.LocalDateTime;
 

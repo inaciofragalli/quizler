@@ -1,8 +1,8 @@
 package engine.webquiz.security;
 
-import engine.user.User;
-import engine.user.UserRepository;
-import engine.user.UserRequest;
+import engine.webquiz.user.User;
+import engine.webquiz.user.UserRepository;
+import engine.webquiz.user.UserRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -1,7 +1,7 @@
 package engine.webquiz.history;
 
-import engine.quiz.Quiz;
-import engine.user.User;
+import engine.webquiz.quiz.Quiz;
+import engine.webquiz.user.User;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

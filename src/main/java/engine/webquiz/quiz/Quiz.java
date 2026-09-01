@@ -1,6 +1,6 @@
 package engine.webquiz.quiz;
 
-import engine.user.User;
+import engine.webquiz.user.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Fetch;
 

@@ -26,7 +26,16 @@ public class AuthController {
         UserData userData = userService.loadUserByUsername(req.email());
         String token = jwtService.generateToken(userData);
 
-        return ResponseEntity.ok(new AuthResponse(token));
+        ResponseCookie cookie = ResponseCookie.from("jwt", token)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(Duration.ofDays(1))
+                .build();
+
+        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok().build();
     }
 
     @ExceptionHandler(AuthenticationException.class)

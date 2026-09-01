@@ -26,9 +26,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Void> login(@Valid @RequestBody AuthRequest req, HttpServletResponse res) {
-        authManager.authenticate(new UsernamePasswordAuthenticationToken(req.email(), req.password()));
+        authManager.authenticate(new UsernamePasswordAuthenticationToken(req.username(), req.password()));
 
-        UserData userData = userService.loadUserByUsername(req.email());
+        UserData userData = userService.loadUserByUsername(req.username());
         String token = jwtService.generateToken(userData);
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)

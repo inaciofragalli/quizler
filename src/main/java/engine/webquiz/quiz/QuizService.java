@@ -113,6 +113,4 @@ public class QuizService {
         completionRepository.deleteByQuiz(quiz);
         quizRepository.delete(quiz);
     }
-
-
 }

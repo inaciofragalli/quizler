@@ -1,8 +1,5 @@
 package engine.webquiz.user;
 
-import engine.webquiz.security.AuthRequest;
-import engine.webquiz.security.AuthResponse;
-import engine.webquiz.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
@@ -19,20 +16,20 @@ public class UserService implements UserDetailsService {
     private final UserRepository repo;
 
     @Override
-    public UserData loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
-        User user = repo.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Not found: " + email));
+    public UserData loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
+        User user = repo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Not found: " + username));
 
         return new UserData(user);
     }
 
     public void registerUser(UserRequest req) {
-        if (repo.findByEmail(req.email()).isPresent()) {
+        if (repo.findByUsername(req.username()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
         User newUser = new User();
-        newUser.setEmail(req.email());
+        newUser.setUsername(req.username());
         newUser.setPassword(encoder.encode(req.password()));
 
         repo.save(newUser);

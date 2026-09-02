@@ -23,7 +23,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthFilter) throws Exception { 
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrfTokenRepository.setCookieCustomizer(cookie -> cookie.partitioned(true));
+        csrfTokenRepository.setCookieCustomizer(cookie -> cookie
+                                                .secure(true)
+                                                .sameSite("None")
+                                                .partitioned(true)
+                                               );
         
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))

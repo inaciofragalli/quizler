@@ -43,6 +43,13 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/csrf")
+    public void csrf(CsrfToken token) {
+        token.getToken();
+        // injecting CsrfToken as a parameter forces Spring to resolve/load it,
+        // which triggers the cookie to be written to the response
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<String> handleAuthException(AuthenticationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");

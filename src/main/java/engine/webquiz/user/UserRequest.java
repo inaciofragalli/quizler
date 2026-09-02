@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Size;
 
 public record UserRequest(
         @NotBlank
-        @Email(regexp = ".+@.+\\..+")
-        String email,
+        @Size(min = 3)
+        String username,
 
         @NotBlank
         @Size(min = 5)

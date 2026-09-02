@@ -29,6 +29,10 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/api/register", "/api/auth/login")
             )
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error", "/error/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/register").permitAll()

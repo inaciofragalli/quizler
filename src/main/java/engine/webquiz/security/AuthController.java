@@ -27,7 +27,7 @@ public class AuthController {
     private final AuthenticationManager authManager;
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@Valid @RequestBody AuthRequest req, HttpServletResponse res) {
+    public ResponseEntity<Void> login(@Valid @RequestBody AuthRequest req) {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(req.username(), req.password()));
 
         UserData userData = userService.loadUserByUsername(req.username());
@@ -41,22 +41,24 @@ public class AuthController {
                 .maxAge(Duration.ofDays(1))
                 .build();
 
-        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("jwt", "") // match your token cookie name
+    public ResponseEntity<Void> logout() {
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
-                .secure(true) // set to true in production (HTTPS)
+                .secure(false)
+                .sameSite("Lax")
                 .path("/")
-                .maxAge(0) // immediately expires the cookie
-                .sameSite("Strict")
+                .maxAge(0) // Instantly expires the cookie
                 .build();
 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
     }
 
     @GetMapping("/me")

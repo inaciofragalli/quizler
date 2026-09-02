@@ -43,6 +43,25 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("jwt", "") // match your token cookie name
+                .httpOnly(true)
+                .secure(true) // set to true in production (HTTPS)
+                .path("/")
+                .maxAge(0) // immediately expires the cookie
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> me(Authentication auth) {
+        return ResponseEntity.ok(new MeResponse(auth.getName()));
+    }
+
     @GetMapping("/csrf")
     public void csrf(CsrfToken token) {
         token.getToken();

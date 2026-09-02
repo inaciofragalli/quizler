@@ -2,7 +2,6 @@ package engine.webquiz.security;
 
 import engine.webquiz.user.UserData;
 import engine.webquiz.user.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +16,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -67,10 +67,8 @@ public class AuthController {
     }
 
     @GetMapping("/csrf")
-    public void csrf(CsrfToken token) {
-        token.getToken();
-        // injecting CsrfToken as a parameter forces Spring to resolve/load it,
-        // which triggers the cookie to be written to the response
+    public ResponseEntity<Map<String, String>> csrf(CsrfToken token) {
+        return ResponseEntity.ok(Map.of("token", token.getToken()));
     }
 
     @ExceptionHandler(AuthenticationException.class)

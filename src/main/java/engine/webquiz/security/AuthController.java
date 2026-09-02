@@ -37,6 +37,7 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("None")
+                .partitioned(true)
                 .path("/")
                 .maxAge(Duration.ofDays(1))
                 .build();
@@ -52,6 +53,7 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("None")
+                .partitioned(true)
                 .path("/")
                 .maxAge(0)
                 .build();

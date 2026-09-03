@@ -6,6 +6,7 @@ public record QuizResponse(
         Long id,
         String title,
         String text,
-        List<String> options
+        List<String> options,
+        String author
 ) {
 }

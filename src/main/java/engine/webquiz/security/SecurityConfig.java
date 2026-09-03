@@ -1,5 +1,6 @@
 package engine.webquiz.security;
 
+import engine.webquiz.ratelimit.RateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

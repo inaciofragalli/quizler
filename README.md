@@ -1,6 +1,6 @@
 # Web Quiz Engine — API
 
-A RESTful quiz API built with Spring Boot, Spring Security, and JWT-based authentication (HttpOnly cookies).
+A RESTful quiz API built with Spring Boot, Spring Security, JWT-based authentication (HttpOnly cookies), CSRF protection, and per-client rate limiting.
 
 ## Tech Stack
 
@@ -8,99 +8,98 @@ A RESTful quiz API built with Spring Boot, Spring Security, and JWT-based authen
 - Spring Security
 - Spring Data JPA + PostgreSQL
 - JJWT (JSON Web Tokens)
+- Bucket4j (rate limiting)
 - Gradle
 
 ## Authentication
 
-Authentication uses JWTs stored in an **HttpOnly, Secure cookie** (not returned in the response body). This protects the token from being read or stolen via XSS.
+Authentication uses JWTs stored in an **HttpOnly cookie** (not returned in the response body), protecting the token from being read or stolen via XSS.
 
 - Cookie name: `jwt`
-- `HttpOnly`, `Secure`, `SameSite=None`
-- Sent automatically by the browser on every request to the API once set — no manual header required from the client.
+- `HttpOnly` always. `Secure`, `SameSite`, and `Partitioned` differ by environment — see below.
+- Sent automatically by the browser on every request once set.
 
-> Note: Because the token isn't accessible to JavaScript, clients (e.g. a browser frontend) must send requests with `credentials: 'include'` (fetch) or `withCredentials: true` (axios) so the cookie is included cross-origin.
+### Local vs. production cookie config
+
+This project currently maintains **two separate `SecurityConfig` files** (one for local dev, one for production), because the correct cookie attributes genuinely differ by environment:
+
+| Attribute | Local (`localhost:5173` → `localhost:8080`) | Production (Vercel → Render) |
+|---|---|---|
+| `Secure` | `false` | `true` |
+| `SameSite` | `Lax` | `None` |
+| `Partitioned` | not set | `true` |
+
+Production requires `Secure` + `SameSite=None` because the frontend and backend are on different domains. As of late 2025, cross-site cookies also require the `Partitioned` attribute (CHIPS) or modern browsers will reject them. `Partitioned` cookies additionally can't be read via `document.cookie` from a different origin — see the frontend README for how this is worked around via a Vercel rewrite proxy that makes the two appear same-origin in production.
+
+> These two config files are hand-maintained in parallel. Any fix to shared logic (e.g. the CSRF filter, rate limiting) needs to be applied to both — this is a known source of merge friction and a candidate for future consolidation into a single environment-variable-driven config.
 
 ### `POST /api/auth/login`
 
 Authenticates a user and sets the `jwt` cookie on success.
 
-**Request body:**
-```json
-{
-  "username": "string",
-  "password": "string"
-}
-```
+**Request body:** `{ "username": "string", "password": "string" }`
 
-**Responses:**
 | Status | Meaning |
 |---|---|
-| `200 OK` | Login successful. `Set-Cookie: jwt=...` header present. |
-| `400 Bad Request` | Missing/invalid fields (validation failure). |
+| `200 OK` | Login successful. `Set-Cookie: jwt=...` present. |
+| `400 Bad Request` | Validation failure. |
 | `401 Unauthorized` | Invalid username or password. |
 
 ### `POST /api/register`
 
-Registers a new user.
+Registers a new user. Same request/response shape as login, minus the cookie.
 
-**Request body:**
-```json
-{
-  "username": "string",
-  "password": "string"
-}
-```
+### `POST /api/auth/logout`
 
-**Responses:**
-| Status | Meaning |
-|---|---|
-| `200/201` | User created. |
-| `400 Bad Request` | Validation failure (e.g. missing fields). |
-| `409 Conflict` | Username already taken (if enforced). |
+Clears the `jwt` cookie. Requires a valid CSRF token (unlike login/register — logout is a state-changing action on an authenticated session, so it's intentionally *not* CSRF-exempt).
 
-## Protected Endpoints
+### `GET /api/auth/me`
 
-All endpoints other than `/api/register` and `/api/auth/login` require a valid `jwt` cookie. Requests without one, or with an invalid/expired token, receive `401 Unauthorized`.
+Returns the current authenticated user's username, based on the JWT cookie. Used by the frontend to determine login state on page load, since the cookie itself isn't readable by JS.
 
-> Fill in the specific quiz endpoints below as they're finalized (e.g. `GET /api/quizzes`, `POST /api/quizzes`, `POST /api/quizzes/{id}/solve`, `GET /api/quizzes/completed`).
+### `GET /api/auth/csrf`
 
-| Method | Path | Description | Auth required |
-|---|---|---|---|
-| `GET` | `/api/quizzes` | List all quizzes | Yes |
-| `GET` | `/api/quizzes/{id}` | Get a single quiz | Yes |
-| `POST` | `/api/quizzes` | Create a quiz | Yes |
-| `DELETE` | `/api/quizzes/{id}` | Delete a quiz (creator only) | Yes |
-| `POST` | `/api/quizzes/{id}/solve` | Submit an answer | Yes |
-| `GET` | `/api/quizzes/completed` | List quizzes the user has completed | Yes |
+Returns the current CSRF token in the response body (`{"token": "..."}"`) *and* sets the `XSRF-TOKEN` cookie. Explicitly resolves the token server-side (`CsrfToken.getToken()`) to force the cookie to be written — without this, Spring Security's deferred token loading means the cookie may never be issued at all for GET requests that don't otherwise touch the token.
 
-## CORS
+## CSRF Protection
 
-CORS is configured to allow credentialed requests (cookies) from specific trusted origins only — not `*`, since wildcard origins are incompatible with `allowCredentials`.
+Uses the double-submit cookie pattern via `CookieCsrfTokenRepository`:
 
-Configured origins (update as environments are added):
-- `http://localhost:5173` (Vite dev server)
-- Production frontend URL (e.g. Vercel deployment)
+- A separate, JS-readable `XSRF-TOKEN` cookie is issued alongside the JWT.
+- Clients must echo its value back as an `X-XSRF-TOKEN` header on all state-changing requests (POST/PUT/DELETE).
+- `/api/register` and `/api/auth/login` are exempt (no authenticated session exists yet to protect). Everything else — including logout — requires a valid, matching token.
+
+**`CsrfCookieFilter`** is registered in the filter chain specifically to force `CsrfToken.getToken()` resolution on every request. Without it, certain authenticated requests (notably the first one after login) can trigger Spring Security to *delete* the CSRF cookie rather than reissue it, as part of its session-fixation protection tied to authentication events. This was a real, subtle production bug — see git history around `CsrfCookieFilter`'s introduction for context.
+
+## Rate Limiting
+
+`RateLimitFilter` applies a per-client token bucket (Bucket4j), currently 20 requests/minute (adjust `REQUESTS_PER_MINUTE` — this is intentionally low for testing and should be raised before real usage). Exceeding the limit returns `429` with `{"error":"Too many requests"}`.
+
+Client identification uses `X-Forwarded-For` (falling back to `getRemoteAddr()` for local dev) — required because Render sits behind a reverse proxy, and `getRemoteAddr()` alone would return the proxy's IP, causing all users to share a single bucket.
+
+> Frontend note: a `429` must never be treated as "not authenticated." Only a genuine `401` from `/me` should clear client-side auth state — rate limiting is a transient condition, not proof of an invalid session.
+
+## Quiz Endpoints
+
+All require a valid `jwt` cookie (`401` if missing/invalid). Mutating endpoints (POST/DELETE) additionally require a valid CSRF token (`403` if missing/mismatched).
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/quizzes` | Paginated list of all quizzes (`Page<QuizResponse>`) |
+| `GET` | `/api/quizzes/{id}` | Single quiz detail, including the current user's prior submission if they've already solved it |
+| `POST` | `/api/quizzes` | Create a quiz (creator is set from the authenticated user) |
+| `DELETE` | `/api/quizzes/{id}` | Delete a quiz — creator only, `403` otherwise |
+| `POST` | `/api/quizzes/{id}/solve` | Submit an answer. Records a `QuizCompletion`. A quiz can only be solved once per user — resubmission is rejected once a completion exists. |
+
+`QuizResponse` never includes the correct answer — only `options` and (once solved) the user's own prior selection, so the answer can't be read from the network tab before solving.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
-| `JWT_SECRET` | Yes | HMAC signing key for JWTs. App fails to start if missing. |
-| `JWT_EXPIRATION` | No (default: `86400000`) | Token lifetime in milliseconds. |
-| `DB_HOST` | Yes | PostgreSQL host (e.g. `localhost`). |
-| `DB_PORT` | Yes | PostgreSQL port (e.g. `5432`). |
-| `DB_NAME` | Yes | Database name. |
-| `DB_USERNAME` | Yes | Database username. |
-| `DB_PASSWORD` | Yes | Database password. |
-
-These are substituted into `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password` in `application.properties`:
-
-```properties
-spring.datasource.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
-spring.datasource.driver-class-name=org.postgresql.Driver
-```
+| `JWT_SECRET` | Yes | HMAC signing key. App fails to start if missing — no insecure default. |
+| `JWT_EXPIRATION` | No (default `86400000`) | Token lifetime in ms. |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USERNAME` / `DB_PASSWORD` | Yes | Substituted into `spring.datasource.*` in `application.properties`. |
 
 ## Running Locally
 
@@ -109,5 +108,10 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 ./gradlew bootRun
 ```
 
-Ensure PostgreSQL is running and the `users`/`quiz`/`quiz_completion` tables exist (Hibernate will create/update them automatically with `spring.jpa.hibernate.ddl-auto=update` in dev).est
-```
+Requires PostgreSQL running locally with matching env vars set (via IntelliJ run config or `application.properties`). Hibernate creates/updates tables automatically with `ddl-auto=update` in dev.
+
+## Known Gotchas (learned the hard way)
+
+- **Two `SecurityConfig` files exist** for local/prod — see above. Any CSRF/filter-chain fix needs manual porting between them.
+- **CSRF cookie can be silently deleted on the first authenticated GET after login** if `CsrfCookieFilter` isn't in the chain — see the CSRF section above.
+- **Rate limiting must key off `X-Forwarded-For` in production**, or all users behind Render's proxy share one bucket.

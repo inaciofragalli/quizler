@@ -2,7 +2,6 @@ package engine.webquiz.security;
 
 import engine.webquiz.user.UserData;
 import engine.webquiz.user.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;

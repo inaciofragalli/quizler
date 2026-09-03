@@ -30,7 +30,8 @@ public class QuizService {
                 quiz.getId(),
                 quiz.getTitle(),
                 quiz.getText(),
-                quiz.getOptions()
+                quiz.getOptions(),
+                quiz.getAuthor().getUsername()
         ));
     }
 
@@ -42,7 +43,8 @@ public class QuizService {
                 quiz.getId(),
                 quiz.getTitle(),
                 quiz.getText(),
-                quiz.getOptions()
+                quiz.getOptions(),
+                quiz.getAuthor().getUsername()
         );
     }
 
@@ -60,7 +62,8 @@ public class QuizService {
                 newQuiz.getId(),
                 newQuiz.getTitle(),
                 newQuiz.getText(),
-                newQuiz.getOptions()
+                newQuiz.getOptions(),
+                newQuiz.getAuthor().getUsername()
         );
     }
 

@@ -48,7 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/quizzes").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes", "/api/quizzes/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)

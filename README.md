@@ -1,4 +1,4 @@
-# Web Quiz Engine — API
+# Quizler — API
 
 A RESTful quiz API built with Spring Boot, Spring Security, JWT-based authentication (HttpOnly cookies), CSRF protection, and per-client rate limiting.
 

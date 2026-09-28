@@ -16,4 +16,6 @@ public interface QuizCompletionRepository extends JpaRepository<QuizCompletion, 
 
     @Transactional
     void deleteByQuiz(Quiz quiz);
+
+    boolean existsByUser_IdAndQuiz_Id(Long userId, Long quizId);
 }

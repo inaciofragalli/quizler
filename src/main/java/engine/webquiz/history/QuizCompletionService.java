@@ -17,7 +17,7 @@ public class QuizCompletionService {
         Page<QuizCompletion> completions = completionRepository.findQuizCompletions(currentUser, pageable);
 
         return completions.map(completion -> new QuizCompletionResponse(
-                completion.getQuiz().getId(), // Grabbing the Quiz ID here!
+                completion.getQuiz().getId(),
                 completion.getCompletedAt()
         ));
     }

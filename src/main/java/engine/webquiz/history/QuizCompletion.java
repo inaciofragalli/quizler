@@ -8,18 +8,26 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "quiz_completion")
+@Table(
+        name = "quiz_completion",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_completion_user_quiz",
+                        columnNames = {"user_id", "quiz_id"}
+                )
+        }
+)
 public class QuizCompletion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quiz_id")
+    @JoinColumn(name = "quiz_id", nullable = false)
     private Quiz quiz;
 
     @CreationTimestamp

@@ -4,6 +4,8 @@ import engine.webquiz.history.QuizCompletion;
 import engine.webquiz.history.QuizCompletionRepository;
 import engine.webquiz.user.UserData;
 import engine.webquiz.user.User;
+import org.jspecify.annotations.NonNull;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -67,8 +69,12 @@ public class QuizService {
         );
     }
 
-    public AnswerResponse guess(User currentUser, Long id, AnswerRequest req) {
-        Quiz quiz = quizRepository.findById(id)
+    public AnswerResponse guess(@NonNull User currentUser, Long quizId, AnswerRequest req) {
+        if (completionRepository.existsByUser_IdAndQuiz_Id(currentUser.getId(), quizId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Quiz already completed!");
+        }
+
+        Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(QuizNotFoundException::new);
 
         List<Integer> answer = Optional.ofNullable(req.answer())
@@ -84,29 +90,33 @@ public class QuizService {
                 "Wrong answer! Please try again."
         );
 
-        if (answer.isEmpty() && quiz.getAnswer().isEmpty()) {
-            QuizCompletion newCompletion = new QuizCompletion();
-            newCompletion.setUser(currentUser);
-            newCompletion.setQuiz(quiz);
+        boolean correct =
+                quiz.getAnswer().size() == answer.size()
+                        && new HashSet<>(quiz.getAnswer())
+                        .equals(new HashSet<>(answer));
 
-            completionRepository.save(newCompletion);
-
-            return success;
-
-        } else if (quiz.getAnswer().size() == answer.size()
-                && new HashSet<>(quiz.getAnswer()).containsAll(answer)) {
-            QuizCompletion newCompletion = new QuizCompletion();
-            newCompletion.setUser(currentUser);
-            newCompletion.setQuiz(quiz);
-
-            completionRepository.save(newCompletion);
-            return success;
+        if (!correct) {
+            return failed;
         }
 
-        return failed;
+        QuizCompletion completion = new QuizCompletion();
+        completion.setUser(currentUser);
+        completion.setQuiz(quiz);
+
+        try {
+            completionRepository.saveAndFlush(completion);
+        } catch (DataIntegrityViolationException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Quiz already completed",
+                    exception
+            );
+        }
+
+        return success;
     }
 
-    public void deleteQuiz(@AuthenticationPrincipal UserData currentUser, Long quizId) {
+    public void deleteQuiz(@AuthenticationPrincipal @NonNull UserData currentUser, Long quizId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(QuizNotFoundException::new);
 
